@@ -1,0 +1,29 @@
+﻿version: "3.9"
+
+services:
+  api:
+    container_name: invisage_pulse_api
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/invisage
+
+  db:
+    image: postgres:16
+    container_name: invisage_pulse_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: invisage
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
