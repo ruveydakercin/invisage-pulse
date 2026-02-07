@@ -1,6 +1,4 @@
-from sqlalchemy import (
-    Column, Integer, String, DateTime, ForeignKey, Numeric, Text, func
-)
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Numeric, Text, func
 from sqlalchemy.orm import relationship
 from app.db import Base
 
@@ -69,3 +67,57 @@ class CostEntry(Base):
 
     work_item = relationship("WorkItem", back_populates="cost_entries")
     resource = relationship("Resource", back_populates="cost_entries")
+
+
+class ImportBatch(Base):
+    __tablename__ = "import_batch"
+
+    id = Column(Integer, primary_key=True, index=True)
+    source = Column(String(50), nullable=False, default="csv")  # csv/jira/ado vs.
+    status = Column(String(20), nullable=False, default="received")  # received|processing|completed|failed
+    filename = Column(String(255), nullable=True)
+    mapping_json = Column(Text, nullable=True)  # şimdilik saklıyoruz (audit/debug)
+    total_rows = Column(Integer, nullable=False, default=0)
+    success_rows = Column(Integer, nullable=False, default=0)
+    error_rows = Column(Integer, nullable=False, default=0)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    raw_rows = relationship("ImportRawRow", back_populates="batch", cascade="all, delete-orphan")
+    errors = relationship("ImportError", back_populates="batch", cascade="all, delete-orphan")
+
+
+class ImportRawRow(Base):
+    __tablename__ = "import_raw_row"
+
+    id = Column(Integer, primary_key=True, index=True)
+    batch_id = Column(Integer, ForeignKey("import_batch.id", ondelete="CASCADE"), nullable=False)
+    row_number = Column(Integer, nullable=False)  # CSV satır no (1’den başlat)
+    raw_json = Column(Text, nullable=False)       # Dict’i json string olarak sakla
+    normalized_hint = Column(String(50), nullable=True)  # time_entry / cost_entry vb
+
+    row_status = Column(String(10), nullable=False, default="PENDING")  # PENDING|VALID|INVALID
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    batch = relationship("ImportBatch", back_populates="raw_rows")
+
+
+class ImportError(Base):
+    __tablename__ = "import_error"
+
+    id = Column(Integer, primary_key=True, index=True)
+    batch_id = Column(Integer, ForeignKey("import_batch.id", ondelete="CASCADE"), nullable=False)
+    raw_row_id = Column(Integer, ForeignKey("import_raw_row.id", ondelete="CASCADE"), nullable=True)
+
+    severity = Column(String(10), nullable=False, default="ERROR")  # ERROR / WARN
+    error_code = Column(String(50), nullable=False)
+    message = Column(Text, nullable=False)
+
+    field_name = Column(String(100), nullable=True)
+    raw_value = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    batch = relationship("ImportBatch", back_populates="errors")
