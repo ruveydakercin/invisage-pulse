@@ -36,6 +36,8 @@ class Resource(Base):
     source = Column(String(30), nullable=False)
     external_id = Column(String(100), nullable=False)
     display_name = Column(String(200))
+    hourly_rate = Column(Numeric(12, 2), nullable=True)
+    currency = Column(String(10), nullable=False, default="TRY")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     time_entries = relationship("TimeEntry", back_populates="resource", cascade="all, delete-orphan")
@@ -49,6 +51,8 @@ class TimeEntry(Base):
     work_item_id = Column(Integer, ForeignKey("work_items.id"), nullable=False)
     resource_id = Column(Integer, ForeignKey("resources.id"), nullable=False)
     minutes = Column(Integer, nullable=False)
+    source = Column(String(30), nullable=True)
+    external_id = Column(String(100), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     work_item = relationship("WorkItem", back_populates="time_entries")

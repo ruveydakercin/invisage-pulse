@@ -11,7 +11,12 @@ services:
       - "8000:8000"
     env_file:
       - .env
-
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/invisage
+    volumes:
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
   db:
     image: postgres:16
     container_name: invisage_pulse_db

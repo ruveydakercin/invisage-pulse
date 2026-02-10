@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from datetime import datetime, timezone
 from app.connectors.jira.router import router as jira_router
+from app.routers import reports
 import json
 
 from app.db import get_db
@@ -30,6 +31,7 @@ app.include_router(cost_entries_router)
 app.include_router(imports_router)
 app.include_router(reports_router)
 app.include_router(jira_router)
+app.include_router(reports.router)
 
 
 # --- Health ---
